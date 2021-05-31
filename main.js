@@ -1,7 +1,7 @@
 
 class Task {
   constructor(task, completed, dateCompleted) {
-    this.id = UUID.generate();
+    this.uuid = UUID.generate();
     this.name = task;
     this.completed = completed;
     this.dateCompleted = dateCompleted;
@@ -33,12 +33,25 @@ class StorageService {
     localStorage.setItem('tasks', tasksAsString);
   }
 
-  updateTask(task) {
-    // TODO:
+  updateTask(row) {
+    let updatedTask = undefined; 
+    for (const task of this.tasks) {
+      if (task.uuid == row.id) {
+        task.completed= true;
+        task.dateCompleted = formatDate(task);
+        updatedTask = task;
+        console.log(updatedTask);
+      }
+    }
+    
+    this.removeTask(row.id);
+    this.addTask(updatedTask);
+
   }
 
   removeTask(uuid) {
-    // TODO:
+    this.tasks = this.tasks.filter(tasks => tasks.uuid != uuid);
+    localStorage.setItem('tasks', JSON.stringify(this.tasks));
   }
 }
 
@@ -62,6 +75,7 @@ class UserInterface {
       this.createTaskFromInput();
       this.clearFormInputs();
       this.populateTasksTable();
+      this.taskInput.value = '';
     });
   }
 
@@ -95,38 +109,70 @@ class UserInterface {
     row.innerHTML = `
       <td>${task.name}</td>
       <td>${this.getCompleteIconHtml(task.completed)}</td>
-      <td>${this.formatDate(task.dateCompleted)}</td>
-      <td>TODO: Complete this</td>
-    `;
+      <td>${formatDate(task)}</td>
+      <td>
+        <div class="pointer" uuid="${task.uuid}">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-trash" viewBox="0 0 16 16">
+          <path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0V6z"/>
+          <path fill-rule="evenodd" d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1h3.5a1 1 0 0 1 1 1v1zM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4H4.118zM2.5 3V2h11v1h-11z"/></svg>
+        </div>
+      </td>`;
 
-    // TODO: add id attribute to row
-
+    
+    row.id = task.uuid;
     this.table.append(row);
     this.addCompleteTaskListenerToRow(row);
     this.addDeleteListenerToRow(row);
   }
 
   getCompleteIconHtml(completed) {
-    return '<div>TODO</div>'
+     if (completed) {
+      return `<div class="form-check">
+      <input class="form-check" type="radio" checked>
+      </div>`;
+     }
+      return `<div class="form-check">
+              <input class="form-check" type="radio">
+              </div>`;
+   
   }
 
-  formatDate(date) {
-    // TODO
-  }
+ 
 
   addCompleteTaskListenerToRow(row) {
-    // TODO
+    row.children[1].children[0].addEventListener('click', (e) => {
+      this.storage.updateTask(row);
+      this.populateTasksTable();
+    });
   }
 
   addDeleteListenerToRow(row) {
-    // TODO
+      row.children[3].children[0].addEventListener('click', (e) => {
+      e.preventDefault();
+      this.storage.removeTask(row.id);
+      this.populateTasksTable();
+    });
   }
 
   clearFormInputs() {
-    // TODO
+    this.uuid = '';
+    this.name = '';
+    this.completed = '';
+    this.dateCompleted = '';
   }
 }
 
+function formatDate(task) {
+  if (task.completed == true) {
+    var today = new Date();
+    var month = today.getMonth()+1;
+    var day = today.getDate();
+    var year = today.getFullYear()
+    return month + '/' + day + '/' + year;
+  } else {
+    return 'Not completed';
+  }
+}
 
 document.addEventListener('DOMContentLoaded', () => {
   const ui = new UserInterface();
